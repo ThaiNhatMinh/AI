@@ -5,8 +5,12 @@ class Vehicle;
 enum SteerType
 {
 	Seek,
-	Flee
+	Flee,
+	Arrive,
+	Pursuit,
+	SteerNum
 };
+enum Deceleration { slow = 3, normal = 2, fast = 1};
 class SteeringBehavior
 {
 private:
@@ -19,5 +23,6 @@ public:
 private:
 	glm::vec2 Seek(const glm::vec2& target);
 	glm::vec2 Flee(const glm::vec2& target);
-
+	glm::vec2 Arrive(const glm::vec2& target, Deceleration type);
+	glm::vec2 Pursuit(MovingObject* target);
 };

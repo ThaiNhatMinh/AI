@@ -10,12 +10,11 @@ Vehicle * GameWorld::CreateVehicle(const char * name)
 }
 
 
-Target * GameWorld::CreateTarget(const char * name)
+void GameWorld::AddTarget(MovingObject* obj)
 {
-	auto p = new Target(name);
-	m_Target = std::unique_ptr<MovingObject>(p);
-	p->OnCreate(this);
-	return p;
+	
+	m_Target = std::unique_ptr<MovingObject>(obj);
+	//obj->OnCreate(this);
 }
 
 void GameWorld::Update(float dt)

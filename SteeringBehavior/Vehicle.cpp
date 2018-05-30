@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "Vehicle.h"
 #include "SteeringBehavior.h"
-
+extern float fMaxSpeed;
 Vehicle::Vehicle(const char * name):MovingObject(name), m_Steering(this)
 {
 }
@@ -23,7 +23,7 @@ void Vehicle::Update(float dt)
 
 	m_Pos += m_Velocity * dt;
 
-	if (glm::length(m_Velocity) > 1)
+	if (glm::length(m_Velocity) > 0.1)
 	{
 		m_Front = glm::normalize(m_Velocity);
 		m_Right = glm::vec2(m_Front.y, -m_Front.x);
@@ -55,7 +55,7 @@ void Vehicle::Render()
 	// PI/180
 	//angle = angle * 180 / glm::pi<float>();
 	//
-	std::cout << angle << std::endl;
+	//std::cout << angle << std::endl;
 	glTranslatef(m_Pos.x, m_Pos.y, 0);
 	glPushMatrix();
 	glRotatef(angle, 0, 0, 1);
@@ -72,6 +72,9 @@ void Vehicle::Render()
 	glColor3f(1, 0, 0);
 	glVertex2f(0, 0);
 	glVertex2f(m_Velocity.x, m_Velocity.y);
+	glColor3f(0, 1, 0);
+	glVertex2f(0, 0);
+	glVertex2f(m_CurrentForce.x, m_CurrentForce.y);
 	glEnd();
 	glPopMatrix();
 }

@@ -3,10 +3,6 @@
 #include <glm/vec2.hpp>
 
 
-const float fMaxSpeed = 200;
-const float fMaxForce = 10;
-const float fMaxTurnRate = 10;
-
 class MovingObject: public GameObject
 {
 protected:

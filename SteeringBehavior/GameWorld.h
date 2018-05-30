@@ -14,7 +14,7 @@ private:
 public:
 	GameWorld() = default;
 	Vehicle * CreateVehicle(const char* name);
-	Target* CreateTarget(const char* name);
+	void AddTarget(MovingObject* obj);
 	void Update(float dt);
 	void Render();
 	MovingObject* GetTarget() {
