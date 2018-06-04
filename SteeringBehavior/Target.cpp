@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "Target.h"
 
-Target::Target(const char* name):MovingObject(name)
+Target::Target(const char* name):Vehicle(name)
 {
 }
 

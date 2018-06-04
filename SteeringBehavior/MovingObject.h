@@ -14,10 +14,16 @@ protected:
 	glm::vec2 m_CurrentAcceleration;
 	float m_fMass;
 
+	MovingObject* m_pTarget;
+	float fMaxSpeed = 200;
+	float fMaxForce = 10;
+	float fMaxTurnRate = 10;
+
 public:
 	MovingObject(const char* name);
 	virtual ~MovingObject() = default;
 
+	virtual void Update(float dt);
 	const glm::vec2& GetVelocity() { return m_Velocity; }
 	void SetVelocity(const glm::vec2& vel) { m_Velocity = vel; }
 	const glm::vec2& GetFront() { return m_Front; }
@@ -29,4 +35,9 @@ public:
 	const glm::vec2& GetPos() { return m_Pos; }
 	void SetPos(const glm::vec2& p) { m_Pos = p; }
 
+	void Reset();
+
+	float GetMaxSpeed() { return fMaxSpeed; }
+	void SetTarget(MovingObject* obj) { m_pTarget = obj; }
+	MovingObject* GetTarget() { return m_pTarget; }
 };
