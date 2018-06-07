@@ -21,3 +21,7 @@ void MovingObject::Reset()
 	this->SetPos(glm::vec2(0));
 	this->SetVelocity(glm::vec2(0));
 }
+void MovingObject::OnCreate(GameWorld * world)
+{
+	m_pWorld = world;
+}

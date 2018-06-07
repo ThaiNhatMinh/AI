@@ -2,7 +2,7 @@
 #include "GameObject.h"
 #include <glm/vec2.hpp>
 
-
+class GameWorld;
 class MovingObject: public GameObject
 {
 protected:
@@ -13,7 +13,7 @@ protected:
 	glm::vec2 m_CurrentForce;
 	glm::vec2 m_CurrentAcceleration;
 	float m_fMass;
-
+	GameWorld * m_pWorld;
 	MovingObject* m_pTarget;
 	float fMaxSpeed = 200;
 	float fMaxForce = 10;
@@ -22,7 +22,7 @@ protected:
 public:
 	MovingObject(const char* name);
 	virtual ~MovingObject() = default;
-
+	void OnCreate(GameWorld* world);
 	virtual void Update(float dt);
 	const glm::vec2& GetVelocity() { return m_Velocity; }
 	void SetVelocity(const glm::vec2& vel) { m_Velocity = vel; }

@@ -3,6 +3,7 @@
 
 void GameWorld::CreateVehicle(MovingObject* obj)
 {
+	obj->OnCreate(this);
 	m_ObjectList.push_back(std::unique_ptr<MovingObject>(obj));
 }
 
@@ -23,6 +24,9 @@ void GameWorld::Render()
 {
 	//m_Target->Render();
 	for (auto& el : m_ObjectList)
+		el->Render();
+
+	for (auto& el : m_ObstacleList)
 		el->Render();
 }
 

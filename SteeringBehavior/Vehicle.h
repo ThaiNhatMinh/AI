@@ -6,18 +6,21 @@ class GameWorld;
 class Vehicle : public MovingObject
 {
 private:
-	GameWorld * m_pWorld;
+	
 	SteeringBehavior m_Steering;
+	glm::vec2 m_Size;
 public:
 	Vehicle(const char* name);
-	void OnCreate(GameWorld* world);
+	
 	void UI(float dt);
 	void Update(float dt);
 	void Render();
-	void RenderTarget();
 
 	GameWorld* GetWorld() { return m_pWorld; }
 	SteeringBehavior* GetSteerBehavior() {
 		return &m_Steering;
 	};
+
+	float GetHeight() { return m_Size.y; }
+	float GetWidth() { return m_Size.x; }
 };

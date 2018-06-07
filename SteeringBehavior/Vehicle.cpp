@@ -2,12 +2,8 @@
 #include "Vehicle.h"
 #include "SteeringBehavior.h"
 extern int m_iWidth, m_iHeight;
-Vehicle::Vehicle(const char * name):MovingObject(name), m_Steering(this)
+Vehicle::Vehicle(const char * name):MovingObject(name), m_Steering(this),m_Size(30,50)
 {
-}
-void Vehicle::OnCreate(GameWorld * world)
-{
-	m_pWorld = world;
 }
 void Vehicle::Update(float dt)
 {
@@ -35,33 +31,38 @@ void Vehicle::Update(float dt)
 		m_Right = glm::vec2(m_Front.y, -m_Front.x);
 	}
 	
-	UI(dt);
+	
 }
 void Vehicle::Render()
 {
-	
+	UI(0);
 	float angle = 0;
 	glPushMatrix();
 	glLoadIdentity();
 	if (m_Velocity != glm::vec2(0))
 	{
 		glm::vec2 direction = glm::normalize(m_Velocity);
-		angle = Vector2Angle(m_Velocity) - 90;
+		angle = Vector2Angle(m_Velocity)-90;
 	}
 	// PI/180
 	//angle = angle * 180 / glm::pi<float>();
 	//
 	//std::cout << angle << std::endl;
+	//angle = 90;
+	//m_Pos = glm::vec2(100, 100);
 	glTranslatef(m_Pos.x, m_Pos.y, 0);
+	
 	glPushMatrix();
+	
 	glRotatef(angle, 0, 0, 1);
-
 	glColor3f(1, 1, 0);
 	glBegin(GL_LINE_LOOP);
-	glVertex2f(0, 50);
-	glVertex2f(-15, 0);
-	glVertex2f(15, 0);
+	glVertex2f(0, m_Size.y);
+	glVertex2f(-m_Size.x/2, 0);
+	glVertex2f(m_Size.x/2, 0);
 	glEnd();
+
+	m_Steering.RenderDebugObj();
 	glPopMatrix();
 	
 	glBegin(GL_LINES);
@@ -73,24 +74,11 @@ void Vehicle::Render()
 	glVertex2f(m_CurrentForce.x, m_CurrentForce.y);
 	glEnd();
 
-	//RenderTarget();
+	
 	glPopMatrix();
 
 }
 
-void Vehicle::RenderTarget()
-{
-	glm::vec2 pos = m_Steering.GetTargetPos();
-	glPushMatrix();
-	glTranslatef(pos.x, pos.y, 0);
-	glBegin(GL_LINES);
-	glVertex2d(10, 10);
-	glVertex2d(-10, -10);
-	glVertex2d(-10, 10);
-	glVertex2d(10, -10);
-	glEnd();
-	glPopMatrix();
-}
 
 void Vehicle::UI(float dt)
 {
@@ -101,20 +89,6 @@ void Vehicle::UI(float dt)
 		Reset();
 	}
 
-	if (ImGui::Button("Behvior"))
-	{
-		m_Steering.SetSteerType((m_Steering.GetSteerType() + 1) % SteerType::SteerNum);
-	}
-	ImGui::SameLine();
-	ImGui::Text(Behavior[m_Steering.GetSteerType()].c_str());
-	if (m_Steering.GetSteerType() == SteerType::Arrive)
-	{
-		if (ImGui::Button("Speed"))
-		{
-			m_Steering.SetArrriveType((m_Steering.GetArriveType() + 1) % 3);
-		}
-		ImGui::SameLine();
-		ImGui::Text(ArriveTypeS[m_Steering.GetArriveType()].c_str());
-	}
+	m_Steering.RenderDebugUI();
 	ImGui::End();
 }

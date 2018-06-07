@@ -10,6 +10,7 @@ class GameWorld
 private:
 	std::vector<std::unique_ptr<MovingObject>> m_ObjectList;
 	std::unique_ptr<MovingObject> m_Target;
+	std::vector<std::unique_ptr<Obstacle>> m_ObstacleList;
 public:
 	GameWorld() = default;
 	void CreateVehicle(MovingObject* obj);
@@ -20,4 +21,9 @@ public:
 	MovingObject* GetTarget() {
 		return m_Target.get();
 	};
+
+	void AddObstacle(Obstacle* obs) {
+		m_ObstacleList.push_back(std::unique_ptr<Obstacle>(obs));
+	};
+	const std::vector<std::unique_ptr<Obstacle>>& GetObstacle() { return m_ObstacleList; }
 };
