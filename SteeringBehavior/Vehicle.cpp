@@ -15,7 +15,7 @@ void Vehicle::Update(float dt)
 
 	if (glm::length(m_Velocity) > fMaxSpeed)
 	{
-		m_Velocity = glm::normalize(m_Velocity) * fMaxSpeed;
+		//m_Velocity = glm::normalize(m_Velocity) * fMaxSpeed;
 	}
 
 	m_Pos += m_Velocity * dt;

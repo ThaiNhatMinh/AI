@@ -52,7 +52,7 @@ void SteeringBehavior::RenderDebugUI()
 	else if (Type == SteerType::ObstacleAvoidance)
 	{
 		ImGui::SliderFloat("BrakingWeight", &BrakingWeight, 0.1, 2.0f);
-
+		ImGui::SliderFloat("TurnMultiplier", &TurnMultiplier, 1.0f, 2.0f);
 
 	}
 }
@@ -62,10 +62,10 @@ void SteeringBehavior::RenderDebugObj()
 	{
 		glBegin(GL_LINE_LOOP);
 		glColor3f(1.0f, 0.1f, 0.5f);
-		glVertex2f(m_pOwner->GetWidth() / 2, 0);
-		glVertex2f(m_pOwner->GetWidth() / 2, m_fBoxLength);
-		glVertex2f(-m_pOwner->GetWidth() / 2, m_fBoxLength);
-		glVertex2f(-m_pOwner->GetWidth() / 2, 0);
+		glVertex2f(m_pOwner->GetWidth()*1.5 / 2, 0);
+		glVertex2f(m_pOwner->GetWidth()*1.5 / 2, m_fBoxLength);
+		glVertex2f(-m_pOwner->GetWidth()*1.5 / 2, m_fBoxLength);
+		glVertex2f(-m_pOwner->GetWidth()*1.5 / 2, 0);
 		glEnd();
 
 		glPushMatrix();
@@ -195,7 +195,7 @@ glm::vec2 SteeringBehavior::ObstacleAvoidance()
 
 			if (TempPos.y > 0) // in front of vehicle
 			{
-				float ExpanRadius = ObstacleList[i]->GetRadius() + m_pOwner->GetWidth() / 2;
+				float ExpanRadius = ObstacleList[i]->GetRadius() + m_pOwner->GetWidth()*1.5 / 2;
 				if (std::fabs(TempPos.x) < ExpanRadius)
 				{
 					float sqrtPart = std::sqrt(ExpanRadius*ExpanRadius - TempPos.x*TempPos.x);
@@ -216,14 +216,14 @@ glm::vec2 SteeringBehavior::ObstacleAvoidance()
 	glm::vec2 r;
 	if (CloestIntersecting)
 	{
-		float multiplier = 1.0f + (m_fBoxLength - localPos.y) / m_fBoxLength;
+		float multiplier = 100.0f + TurnMultiplier*(m_fBoxLength - localPos.y) / m_fBoxLength;
 
-		r.x = (localPos.x - CloestIntersecting->GetRadius())*multiplier;
+		r.x = (CloestIntersecting->GetRadius() - localPos.x)*multiplier;
 		r.y = (CloestIntersecting->GetRadius() - localPos.y)*BrakingWeight;
 		r = TransfromPoint(r, Vector2Angle(m_pOwner->GetVelocity()) - 90, m_pOwner->GetPos());
-		m_TargetPos = r;
-		return r;
+		m_TargetPos = glm::normalize(r) * m_pOwner->GetMaxSpeed();
+		return m_TargetPos;
 	}
-	return glm::vec2(0);
+	return Wander();
 }
 

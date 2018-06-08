@@ -62,7 +62,8 @@ public: // Wander get/set
 
 private: // ObstacleAvoidance
 	float m_fBoxLength;
-	float BrakingWeight = 0.2;
+	float BrakingWeight = 0.5;
+	float TurnMultiplier = 1.5f;
 	glm::vec2 TempPos;
 public: // ObstacleAvoidance
 	glm::vec2 ObstacleAvoidance();
