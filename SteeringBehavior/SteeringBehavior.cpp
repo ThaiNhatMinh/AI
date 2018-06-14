@@ -13,6 +13,7 @@ const glm::vec2 & SteeringBehavior::Calculate()
 	else if (Type == SteerType::Pursuit) force = Pursuit(pTarget);
 	else if (Type == SteerType::Wander) force = Wander();
 	else if (Type == SteerType::ObstacleAvoidance) force = ObstacleAvoidance();
+	else if (Type == SteerType::WallAvoidance) force = WallAvoidance();
 	return force;
 }
 void SteeringBehavior::RenderDebugUI()
@@ -55,6 +56,12 @@ void SteeringBehavior::RenderDebugUI()
 		ImGui::SliderFloat("TurnMultiplier", &TurnMultiplier, 1.0f, 2.0f);
 
 	}
+	else if (Type == SteerType::WallAvoidance)
+	{
+		ImGui::SliderFloat("Fleeler Length", &m_FleelerLength, 15,100);
+		ImGui::SliderFloat("Force Multi", &m_fForceMulti, 5, 100);
+		ImGui::SliderFloat("Base Force", &m_fBaseForce, 30, 100);
+	}
 }
 void SteeringBehavior::RenderDebugObj()
 {
@@ -75,6 +82,22 @@ void SteeringBehavior::RenderDebugObj()
 		glVertex2f(TempPos.x, TempPos.y);
 		glEnd();
 		glPointSize(1.0f);
+		glPopMatrix();
+	}
+	else if (Type == SteerType::WallAvoidance)
+	{
+
+		glPushMatrix();
+		glLoadIdentity();
+		glBegin(GL_LINES);
+		for (auto el : m_Fleelers)
+		{
+			glVertex2f(m_pOwner->GetPos().x, m_pOwner->GetPos().y);
+			glVertex2f(el.x, el.y);
+			
+			
+		}
+		glEnd();
 		glPopMatrix();
 	}
 }
@@ -174,12 +197,62 @@ glm::vec2 SteeringBehavior::Wander()
 	return Seek(m_TargetPos);
 }
 
+void SteeringBehavior::CreateFleeler()
+{
+	m_Fleelers.clear();
+	glm::vec2 p;
+	p = m_pOwner->GetPos() + m_FleelerLength * m_pOwner->GetFront();
+	m_Fleelers.push_back(p);
+
+	p = m_pOwner->GetPos() + m_FleelerLength * RotateVector(m_pOwner->GetFront(), 45.0f);
+	m_Fleelers.push_back(p);
+	p = m_pOwner->GetPos() + m_FleelerLength * RotateVector(m_pOwner->GetFront(), -45.0f);
+	m_Fleelers.push_back(p);
+
+}
+
+glm::vec2 SteeringBehavior::WallAvoidance()
+{
+	auto& walls = m_pOwner->GetWorld()->GetWalls();
+	CreateFleeler();
+
+	float DistanceToCurrentIP = 0.0f,DistanceToClosestIP = 0xffffffff;
+	int wallID = -1;
+
+	glm::vec2 p, closestPoint,force;
+
+	for (auto el : m_Fleelers)
+	{
+		for (int i=0; i< walls.size(); i++)
+		{
+			if (LineIntersection(m_pOwner->GetPos(), el, walls[i].From(), walls[i].To(), p))
+			{
+				float DistanceToCurrentIP = glm::distance(p, m_pOwner->GetPos());
+				if (DistanceToCurrentIP < DistanceToClosestIP&& DistanceToCurrentIP <= m_FleelerLength+1.0f)
+				{
+					DistanceToCurrentIP = DistanceToClosestIP;
+					closestPoint = p;
+					wallID = i;
+				}
+			}
+		}
+
+		if (wallID >= 0)
+		{
+			glm::vec2 OverShoot = el - closestPoint;
+			force = walls[wallID].Normal() * glm::length(OverShoot)*m_fForceMulti + walls[wallID].Normal() *m_fBaseForce;
+			return (force);
+		}
+	}
+	return Wander();
+}
+
 glm::vec2 SteeringBehavior::ObstacleAvoidance()
 {
 	TempPos = glm::vec2(0);
 	GameWorld* pWorld = m_pOwner->GetWorld();
 	auto& ObstacleList = pWorld->GetObstacle();
-	m_fBoxLength = m_pOwner->GetHeight() + (glm::length(m_pOwner->GetVelocity())/m_pOwner->GetMaxSpeed())*m_pOwner->GetHeight();
+	m_fBoxLength = m_pOwner->GetHeight()*1.5f + (glm::length(m_pOwner->GetVelocity())/m_pOwner->GetMaxSpeed())*m_pOwner->GetHeight()*1.7;
 
 	Obstacle* CloestIntersecting = nullptr;
 	float Distance = 0xffffffff;
@@ -212,17 +285,18 @@ glm::vec2 SteeringBehavior::ObstacleAvoidance()
 			}
 		}
 	}
-
+	
 	glm::vec2 r;
 	if (CloestIntersecting)
 	{
+	
 		float multiplier = 100.0f + TurnMultiplier*(m_fBoxLength - localPos.y) / m_fBoxLength;
-
+		
 		r.x = (CloestIntersecting->GetRadius() - localPos.x)*multiplier;
 		r.y = (CloestIntersecting->GetRadius() - localPos.y)*BrakingWeight;
-		r = TransfromPoint(r, Vector2Angle(m_pOwner->GetVelocity()) - 90, m_pOwner->GetPos());
+		r = TransfromPoint(r, Vector2Angle(m_pOwner->GetVelocity())-90, m_pOwner->GetPos());
 		m_TargetPos = glm::normalize(r) * m_pOwner->GetMaxSpeed();
-		return m_TargetPos;
+		return Seek(r);
 	}
 	return Wander();
 }

@@ -10,11 +10,12 @@ enum SteerType
 	Pursuit,
 	Wander,
 	ObstacleAvoidance,
+	WallAvoidance,
 	SteerNum
 };
 enum Deceleration { slow = 3, normal = 2, fast = 1};
 
-static std::vector<std::string> Behavior{ "Seek", "Flee", "Arrive","Pursuit","Wander","ObstacleAvoidance" };
+static std::vector<std::string> Behavior{ "Seek", "Flee", "Arrive","Pursuit","Wander","ObstacleAvoidance","WallAvoidance" };
 static std::vector<std::string> ArriveTypeS{ "Fast", "Normal", "Slow" };
 
 class SteeringBehavior
@@ -44,7 +45,7 @@ private:
 	glm::vec2 Pursuit(MovingObject* target);
 	glm::vec2 Evade(MovingObject* target); 
 	glm::vec2 Wander();
-
+	
 private: // Wander param
 	float m_fWanderRadius = 30.0f;
 	float m_fWanderDistance = 70;
@@ -65,6 +66,13 @@ private: // ObstacleAvoidance
 	float BrakingWeight = 0.5;
 	float TurnMultiplier = 1.5f;
 	glm::vec2 TempPos;
-public: // ObstacleAvoidance
 	glm::vec2 ObstacleAvoidance();
+
+private:
+	float m_FleelerLength = 40;
+	float m_fForceMulti = 50.0f;
+	float m_fBaseForce = 50.0f;
+	std::vector<glm::vec2> m_Fleelers;
+	void CreateFleeler();
+	glm::vec2 WallAvoidance();
 };

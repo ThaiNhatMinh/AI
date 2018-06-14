@@ -176,6 +176,7 @@
     <ClInclude Include="targetver.h" />
     <ClInclude Include="Ultil.h" />
     <ClInclude Include="Vehicle.h" />
+    <ClInclude Include="Wall.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Lib\imgui\imgui.cpp" />

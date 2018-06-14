@@ -28,6 +28,8 @@ void GameWorld::Render()
 
 	for (auto& el : m_ObstacleList)
 		el->Render();
+	for (auto& el : m_Walls)
+		el.Render();
 }
 
 void GameWorld::Reset()

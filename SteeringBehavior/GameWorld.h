@@ -11,6 +11,7 @@ private:
 	std::vector<std::unique_ptr<MovingObject>> m_ObjectList;
 	std::unique_ptr<MovingObject> m_Target;
 	std::vector<std::unique_ptr<Obstacle>> m_ObstacleList;
+	std::vector<Wall> m_Walls;
 public:
 	GameWorld() = default;
 	void CreateVehicle(MovingObject* obj);
@@ -26,4 +27,9 @@ public:
 		m_ObstacleList.push_back(std::unique_ptr<Obstacle>(obs));
 	};
 	const std::vector<std::unique_ptr<Obstacle>>& GetObstacle() { return m_ObstacleList; }
+
+	void AddWall(Wall w) { m_Walls.push_back(w); }
+	const std::vector<Wall>& GetWalls() {
+		return m_Walls;
+	};
 };
