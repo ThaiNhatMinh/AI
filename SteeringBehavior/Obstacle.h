@@ -6,7 +6,7 @@ private:
 	float m_fRadius;
 	glm::vec2 m_Pos;
 public:
-	Obstacle(const glm::vec2& pos, float r) :m_Pos(pos), m_fRadius(r),GameObject("Obstacle"){}
+	Obstacle(const char* name,const glm::vec2& pos, float r) :m_Pos(pos), m_fRadius(r),GameObject(name){}
 
 	const glm::vec2& GetPos() { return m_Pos; }
 	void SetPos(const glm::vec2& p) { m_Pos = p; }

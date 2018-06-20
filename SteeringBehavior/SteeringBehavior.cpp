@@ -14,6 +14,8 @@ const glm::vec2 & SteeringBehavior::Calculate()
 	else if (Type == SteerType::Wander) force = Wander();
 	else if (Type == SteerType::ObstacleAvoidance) force = ObstacleAvoidance();
 	else if (Type == SteerType::WallAvoidance) force = WallAvoidance();
+	else if (Type == SteerType::Interpose) force = Interpose();
+	else if (Type == SteerType::Hide) force = Hide();
 	return force;
 }
 void SteeringBehavior::RenderDebugUI()
@@ -245,6 +247,80 @@ glm::vec2 SteeringBehavior::WallAvoidance()
 		}
 	}
 	return Wander();
+}
+
+glm::vec2 SteeringBehavior::Interpose()
+{
+	GameWorld* pWorld = m_pOwner->GetWorld();
+	auto& Objs = pWorld->GetObjects();
+
+	int sz = Objs.size();
+	if (sz < 2) return Wander();
+	MovingObject* obj1, *obj2;
+	do
+	{
+		obj1 = Objs[std::rand() % sz].get();
+		obj2 = Objs[std::rand() % sz].get();
+	} while (obj1 == obj2);
+
+
+	glm::vec2 midpoint = (obj1->GetPos() + obj2->GetPos()) / 2.0f;
+
+	float TimeToReachMidPoint = glm::distance(m_pOwner->GetPos(), midpoint) / m_pOwner->GetMaxSpeed();
+
+	glm::vec2 aPos = obj1->GetPos() + obj1->GetVelocity() * TimeToReachMidPoint;
+	glm::vec2 bPos = obj2->GetPos() + obj2->GetVelocity() * TimeToReachMidPoint;
+
+	midpoint = (aPos + bPos) / 2.0f;
+
+	return Arrive(midpoint, fast);
+}
+
+glm::vec2 SteeringBehavior::GetHidingPosition(const glm::vec2 & objPos, float radius, const glm::vec2 & posTarget)
+{
+	const float DistanceFromBoundary = 30.0f;
+	float distance = DistanceFromBoundary + radius;
+	glm::vec2 toObj = glm::normalize(objPos - posTarget);
+	return (toObj*distance) + objPos;
+	
+}
+
+glm::vec2 SteeringBehavior::Hide()
+{
+	float ClosestDistance = 0xffffffff;
+	glm::vec2 BestHidingPos;
+	GameWorld* pWorld = m_pOwner->GetWorld();
+	auto& Objs = pWorld->GetObjects();
+	auto& obstacles = pWorld->GetObstacle();
+
+	int sz = Objs.size();
+	if (sz==1) return Wander();
+	MovingObject* obj1;
+	do
+	{
+		obj1 = Objs[std::rand() % sz].get();
+		
+	} while (obj1 == m_pOwner);
+
+
+	for (auto& el : obstacles)
+	{
+		glm::vec2 HidePos = GetHidingPosition(el->GetPos(), el->GetRadius(), obj1->GetPos());
+
+		float dis = glm::distance(m_pOwner->GetPos(), HidePos);
+
+		if (dis < ClosestDistance)
+		{
+			ClosestDistance = dis;
+			BestHidingPos = HidePos;
+			//std::cout << el->GetName() << std::endl;
+
+		}
+	}
+
+	if (ClosestDistance >10000000.0f) return Evade(obj1);
+
+	return Arrive(BestHidingPos, fast);
 }
 
 glm::vec2 SteeringBehavior::ObstacleAvoidance()

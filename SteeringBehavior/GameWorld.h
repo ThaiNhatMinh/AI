@@ -22,7 +22,9 @@ public:
 	MovingObject* GetTarget() {
 		return m_Target.get();
 	};
-
+	const std::vector<std::unique_ptr<MovingObject>>& GetObjects() {
+		return m_ObjectList;
+	};
 	void AddObstacle(Obstacle* obs) {
 		m_ObstacleList.push_back(std::unique_ptr<Obstacle>(obs));
 	};

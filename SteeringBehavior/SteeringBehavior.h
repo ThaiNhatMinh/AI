@@ -11,11 +11,13 @@ enum SteerType
 	Wander,
 	ObstacleAvoidance,
 	WallAvoidance,
+	Interpose,
+	Hide,
 	SteerNum
 };
 enum Deceleration { slow = 3, normal = 2, fast = 1};
 
-static std::vector<std::string> Behavior{ "Seek", "Flee", "Arrive","Pursuit","Wander","ObstacleAvoidance","WallAvoidance" };
+static std::vector<std::string> Behavior{ "Seek", "Flee", "Arrive","Pursuit","Wander","ObstacleAvoidance","WallAvoidance","Interpose","Hide" };
 static std::vector<std::string> ArriveTypeS{ "Fast", "Normal", "Slow" };
 
 class SteeringBehavior
@@ -68,11 +70,19 @@ private: // ObstacleAvoidance
 	glm::vec2 TempPos;
 	glm::vec2 ObstacleAvoidance();
 
-private:
+private: // WallAvoidance
 	float m_FleelerLength = 40;
 	float m_fForceMulti = 50.0f;
 	float m_fBaseForce = 50.0f;
 	std::vector<glm::vec2> m_Fleelers;
 	void CreateFleeler();
 	glm::vec2 WallAvoidance();
+
+private: // Interpose
+	glm::vec2 Interpose();
+
+private: // Hide
+	glm::vec2 GetHidingPosition(const glm::vec2& objPos, float radius, const glm::vec2&posTarget);
+	glm::vec2 Hide();
+
 };
