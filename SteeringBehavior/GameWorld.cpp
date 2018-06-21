@@ -30,6 +30,8 @@ void GameWorld::Render()
 		el->Render();
 	for (auto& el : m_Walls)
 		el.Render();
+
+	m_Path.Render();
 }
 
 void GameWorld::Reset()

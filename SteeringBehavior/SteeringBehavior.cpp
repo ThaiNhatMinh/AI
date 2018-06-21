@@ -16,6 +16,7 @@ const glm::vec2 & SteeringBehavior::Calculate()
 	else if (Type == SteerType::WallAvoidance) force = WallAvoidance();
 	else if (Type == SteerType::Interpose) force = Interpose();
 	else if (Type == SteerType::Hide) force = Hide();
+	else if (Type == SteerType::FollowPath) force = FollowPath();
 	return force;
 }
 void SteeringBehavior::RenderDebugUI()
@@ -64,6 +65,12 @@ void SteeringBehavior::RenderDebugUI()
 		ImGui::SliderFloat("Force Multi", &m_fForceMulti, 5, 100);
 		ImGui::SliderFloat("Base Force", &m_fBaseForce, 30, 100);
 	}
+	else if (Type == SteerType::FollowPath)
+	{
+		ImGui::SliderFloat("m_fWayPointSeekDis", &m_fWayPointSeekDis, 5, 50);
+		
+	}
+
 }
 void SteeringBehavior::RenderDebugObj()
 {
@@ -227,16 +234,16 @@ glm::vec2 SteeringBehavior::WallAvoidance()
 	{
 		for (int i=0; i< walls.size(); i++)
 		{
-			if (LineIntersection(m_pOwner->GetPos(), el, walls[i].From(), walls[i].To(), p))
-			{
-				float DistanceToCurrentIP = glm::distance(p, m_pOwner->GetPos());
-				if (DistanceToCurrentIP < DistanceToClosestIP&& DistanceToCurrentIP <= m_FleelerLength+1.0f)
-				{
-					DistanceToCurrentIP = DistanceToClosestIP;
-					closestPoint = p;
-					wallID = i;
-				}
-			}
+if (LineIntersection(m_pOwner->GetPos(), el, walls[i].From(), walls[i].To(), p))
+{
+	float DistanceToCurrentIP = glm::distance(p, m_pOwner->GetPos());
+	if (DistanceToCurrentIP < DistanceToClosestIP&& DistanceToCurrentIP <= m_FleelerLength + 1.0f)
+	{
+		DistanceToCurrentIP = DistanceToClosestIP;
+		closestPoint = p;
+		wallID = i;
+	}
+}
 		}
 
 		if (wallID >= 0)
@@ -282,7 +289,7 @@ glm::vec2 SteeringBehavior::GetHidingPosition(const glm::vec2 & objPos, float ra
 	float distance = DistanceFromBoundary + radius;
 	glm::vec2 toObj = glm::normalize(objPos - posTarget);
 	return (toObj*distance) + objPos;
-	
+
 }
 
 glm::vec2 SteeringBehavior::Hide()
@@ -294,12 +301,12 @@ glm::vec2 SteeringBehavior::Hide()
 	auto& obstacles = pWorld->GetObstacle();
 
 	int sz = Objs.size();
-	if (sz==1) return Wander();
+	if (sz == 1) return Wander();
 	MovingObject* obj1;
 	do
 	{
 		obj1 = Objs[std::rand() % sz].get();
-		
+
 	} while (obj1 == m_pOwner);
 
 
@@ -318,9 +325,21 @@ glm::vec2 SteeringBehavior::Hide()
 		}
 	}
 
-	if (ClosestDistance >10000000.0f) return Evade(obj1);
+	if (ClosestDistance > 10000000.0f) return Evade(obj1);
 
 	return Arrive(BestHidingPos, fast);
+}
+
+glm::vec2 SteeringBehavior::FollowPath()
+{
+	Path* pPath = m_pOwner->GetWorld()->GetPath();
+	if (glm::distance(m_pOwner->GetPos(), pPath->GetCurrentWayPoint()) < m_fWayPointSeekDis)
+	{
+		pPath->SetNextWayPoint();
+	}
+	if (pPath->IsFinished()) return Seek(pPath->GetCurrentWayPoint()); 
+
+	return Arrive(pPath->GetCurrentWayPoint(), normal);
 }
 
 glm::vec2 SteeringBehavior::ObstacleAvoidance()

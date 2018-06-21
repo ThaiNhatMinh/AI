@@ -13,11 +13,12 @@ enum SteerType
 	WallAvoidance,
 	Interpose,
 	Hide,
+	FollowPath,
 	SteerNum
 };
 enum Deceleration { slow = 3, normal = 2, fast = 1};
 
-static std::vector<std::string> Behavior{ "Seek", "Flee", "Arrive","Pursuit","Wander","ObstacleAvoidance","WallAvoidance","Interpose","Hide" };
+static std::vector<std::string> Behavior{ "Seek", "Flee", "Arrive","Pursuit","Wander","ObstacleAvoidance","WallAvoidance","Interpose","Hide","FollowPath" };
 static std::vector<std::string> ArriveTypeS{ "Fast", "Normal", "Slow" };
 
 class SteeringBehavior
@@ -85,4 +86,7 @@ private: // Hide
 	glm::vec2 GetHidingPosition(const glm::vec2& objPos, float radius, const glm::vec2&posTarget);
 	glm::vec2 Hide();
 
+private: // Path following
+	float m_fWayPointSeekDis = 5; 
+	glm::vec2 FollowPath();
 };
