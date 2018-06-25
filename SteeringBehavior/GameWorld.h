@@ -12,7 +12,7 @@ private:
 	std::unique_ptr<MovingObject> m_Target;
 	std::vector<std::unique_ptr<Obstacle>> m_ObstacleList;
 	std::vector<Wall> m_Walls;
-	Path m_Path;
+	Path* m_Path;
 public:
 	GameWorld() = default;
 	void CreateVehicle(MovingObject* obj);
@@ -36,6 +36,6 @@ public:
 		return m_Walls;
 	};
 
-	Path* GetPath() { return &m_Path; }
-	void SetPath(Path p) { m_Path = p; }
+	Path* GetPath() { return m_Path; }
+	void SetPath(Path *p) { m_Path = p; }
 };
