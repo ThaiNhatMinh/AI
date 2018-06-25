@@ -14,9 +14,9 @@ protected:
 	glm::vec2 m_CurrentAcceleration;
 	float m_fMass;
 	GameWorld * m_pWorld;
-	MovingObject* m_pTarget;
+	MovingObject* m_pTarget = nullptr;
 	float fMaxSpeed = 200;
-	float fMaxForce = 10;
+	float fMaxForce = 150;
 	float fMaxTurnRate = 10;
 
 public:
@@ -38,6 +38,8 @@ public:
 	void Reset();
 
 	float GetMaxSpeed() { return fMaxSpeed; }
+	float GetMaxForce() { return fMaxForce; }
+	
 	void SetTarget(MovingObject* obj) { m_pTarget = obj; }
 	MovingObject* GetTarget() { return m_pTarget; }
 };

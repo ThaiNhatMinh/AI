@@ -7,7 +7,11 @@ const glm::vec2 & SteeringBehavior::Calculate()
 	//GameWorld* pWorld = m_pOwner->GetWorld();
 	MovingObject* pTarget = m_pOwner->GetTarget();
 	glm::vec2 force;
-	if(Type==SteerType::Seek) force = Seek(pTarget->GetPos());
+	if (Type == SteerType::Seek)
+	{
+		if(pTarget)	force = Seek(pTarget->GetPos());
+		else force = glm::vec2(0);
+	}
 	else if(Type==SteerType::Flee) force = Flee(pTarget->GetPos());
 	else if (Type == SteerType::Arrive) force = Arrive(pTarget->GetPos(), (Deceleration)(ArriveType+1));
 	else if (Type == SteerType::Pursuit) force = Pursuit(pTarget);
@@ -17,7 +21,10 @@ const glm::vec2 & SteeringBehavior::Calculate()
 	else if (Type == SteerType::Interpose) force = Interpose();
 	else if (Type == SteerType::Hide) force = Hide();
 	else if (Type == SteerType::FollowPath) force = FollowPath();
-	return force;
+	else if (Type == SteerType::OffsetPursut) force = OffsetPursut();
+	//AccumulateForce(m_CurrentForce, force);
+	m_CurrentForce = force;
+	return m_CurrentForce;
 }
 void SteeringBehavior::RenderDebugUI()
 {
@@ -34,10 +41,11 @@ void SteeringBehavior::RenderDebugUI()
 
 	if (ImGui::Button("Behvior"))
 	{
-		Type = (SteerType)((Type + 1) % SteerType::SteerNum);
+		Type = (SteerType)((Type*2) % SteerType::SteerNum);
+		if (Type == 0) Type = SteerType::Seek;
 	}
 	ImGui::SameLine();
-	ImGui::Text(Behavior[Type].c_str());
+	ImGui::Text(GetBehaviorName(Type));
 	if (Type == SteerType::Arrive)
 	{
 		if (ImGui::Button("Speed"))
@@ -109,6 +117,20 @@ void SteeringBehavior::RenderDebugObj()
 		glEnd();
 		glPopMatrix();
 	}
+}
+bool SteeringBehavior::AccumulateForce(glm::vec2 & force, const glm::vec2 & ForcetoAdd)
+{
+	float CurrentForceLength = glm::length(force);
+	float ForceRemain = m_pOwner->GetMaxForce() - CurrentForceLength;
+	if (ForceRemain < 0.0f) return false;
+
+	float forceLengthAdd = glm::length(ForcetoAdd);
+
+	if (forceLengthAdd < ForceRemain)
+		force += ForcetoAdd;
+	else force += glm::normalize(ForcetoAdd) * ForceRemain;
+	
+	return true;
 }
 glm::vec2 SteeringBehavior::Seek(const glm::vec2 & target)
 {
@@ -337,9 +359,22 @@ glm::vec2 SteeringBehavior::FollowPath()
 	{
 		pPath->SetNextWayPoint();
 	}
-	if (pPath->IsFinished()) return Seek(pPath->GetCurrentWayPoint()); 
+	if (pPath->IsFinished()) return Arrive(pPath->GetCurrentWayPoint(), normal);
 
-	return Arrive(pPath->GetCurrentWayPoint(), normal);
+	return Seek(pPath->GetCurrentWayPoint());
+}
+
+glm::vec2 SteeringBehavior::OffsetPursut()
+{
+	if (m_pTarget == nullptr) return glm::vec2(0);
+
+	glm::vec2 WorldOffsetPos = TransfromPoint(m_Offset, Vector2Angle(m_pTarget->GetVelocity()), m_pTarget->GetPos());
+
+	glm::vec2 ToOffset = WorldOffsetPos - m_pOwner->GetPos();
+
+	float LookAheadTime = glm::length(ToOffset) / (m_pOwner->GetMaxSpeed() + glm::length(m_pTarget->GetVelocity()));
+
+	return Arrive(WorldOffsetPos + m_pTarget->GetVelocity()*LookAheadTime,fast);
 }
 
 glm::vec2 SteeringBehavior::ObstacleAvoidance()

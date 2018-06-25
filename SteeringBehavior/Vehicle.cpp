@@ -84,6 +84,7 @@ void Vehicle::UI(float dt)
 {
 	ImGui::Begin(GetName().c_str());
 	ImGui::SliderFloat("Max Speed", &fMaxSpeed, 100, 400);
+	ImGui::SliderFloat("Max Force", &fMaxForce, 100, 400);
 	if (ImGui::Button("Reset"))
 	{
 		Reset();
