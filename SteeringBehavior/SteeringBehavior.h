@@ -4,18 +4,19 @@
 class Vehicle;
 enum SteerType
 {
-	Seek = 1,
-	Flee = 2,
-	Arrive = 4,
-	Pursuit = 8,
-	Wander = 16,
-	ObstacleAvoidance = 32,
-	WallAvoidance = 64,
-	Interpose = 128,
-	Hide = 256,
-	FollowPath = 512,
-	OffsetPursut = 1024,
-	SteerNum = 2048
+	Seek				= 0x1,
+	Flee				= 0x2,
+	Arrive				= 0x4,
+	Pursuit				= 0x8,
+	Wander				= 0x10,
+	ObstacleAvoidance	= 0x20,
+	WallAvoidance		= 0x40,
+	Interpose			= 0x80,
+	Hide				= 0x100,
+	FollowPath			= 0x200,
+	OffsetPursut		= 0x400,
+	Group				= 0x800,
+	SteerNum			= 0x1000
 };
 enum Deceleration { slow = 3, normal = 2, fast = 1};
 
@@ -58,6 +59,9 @@ static const char* GetBehaviorName(SteerType type)
 	case OffsetPursut:
 		return "OffsetPursut";
 		break;
+	case Group:
+		return "Group";
+		break;
 	case SteerNum:
 	default:
 		return "Unknow";
@@ -70,7 +74,7 @@ private:
 	glm::vec2 m_CurrentForce;
 	Vehicle * m_pOwner;
 	glm::vec2 m_TargetPos = glm::vec2(0);
-	SteerType Type;
+	int Type;
 	Deceleration ArriveType;
 public:
 	SteeringBehavior(Vehicle* owner) :m_pOwner(owner) {};
@@ -87,6 +91,7 @@ public:
 	int GetArriveType() { return ArriveType; }
 private:
 	bool AccumulateForce(glm::vec2& force, const glm::vec2& ForcetoAdd);
+	int IsActive(SteerType type);
 	glm::vec2 Seek(const glm::vec2& target);
 	glm::vec2 Flee(const glm::vec2& target);
 	glm::vec2 Arrive(const glm::vec2& target, Deceleration type);
@@ -96,17 +101,17 @@ private:
 	
 private: // Wander param
 	float m_fWanderRadius = 30.0f;
-	float m_fWanderDistance = 70;
+	float m_fWanderDistance = 6;
 	float m_fWanderJitter = 50.0;
 public: // Wander get/set
-	float* GetWanderRadius() { return &m_fWanderRadius; }
+	/*float* GetWanderRadius() { return &m_fWanderRadius; }
 	void SetWanderRadius(float f) { m_fWanderRadius = f; }
 
 	float* GetWanderDistance() { return &m_fWanderDistance; }
 	void SetWanderDistance(float f) { m_fWanderDistance = f; }
 
 	float* GetWadnerJitter() { return &m_fWanderJitter; }
-	void SetWanderJitter(float f) { m_fWanderJitter = f; }
+	void SetWanderJitter(float f) { m_fWanderJitter = f; }*/
 
 
 private: // ObstacleAvoidance
@@ -117,7 +122,7 @@ private: // ObstacleAvoidance
 	glm::vec2 ObstacleAvoidance();
 
 private: // WallAvoidance
-	float m_FleelerLength = 40;
+	float m_FleelerLength = 15;
 	float m_fForceMulti = 50.0f;
 	float m_fBaseForce = 50.0f;
 	std::vector<glm::vec2> m_Fleelers;
@@ -142,4 +147,16 @@ private: // Offset Pursut
 public:
 	void SetTarget(MovingObject* pTarget) { m_pTarget = pTarget; }
 	void SetOffset(const glm::vec2 offset) { m_Offset = offset; }
+
+private: // Group
+	static float m_fSeparationWeight;
+	static float m_fAlignmentWeight;
+	static float m_fCohensionWeight;
+	static float m_fViewDistance;
+
+	glm::vec2 Separation();
+	glm::vec2 Alignment();
+	glm::vec2 Cohesion();
+	glm::vec2 Group();
+
 };

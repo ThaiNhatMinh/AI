@@ -16,8 +16,14 @@ void GameWorld::AddTarget(MovingObject* obj)
 
 void GameWorld::Update(float dt)
 {
+	ImGui::Begin("World");
 	for (auto& el : m_ObjectList)
+	{
 		el->Update(dt);
+		if (ImGui::Button(el->GetName().c_str()))
+			el->RenderUI();
+	}
+	ImGui::End();
 }
 
 void GameWorld::Render()

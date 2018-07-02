@@ -18,7 +18,7 @@ protected:
 	float fMaxSpeed = 200;
 	float fMaxForce = 150;
 	float fMaxTurnRate = 10;
-
+	glm::vec2 m_Size;
 public:
 	MovingObject(const char* name);
 	virtual ~MovingObject() = default;
@@ -42,4 +42,12 @@ public:
 	
 	void SetTarget(MovingObject* obj) { m_pTarget = obj; }
 	MovingObject* GetTarget() { return m_pTarget; }
+
+	float GetHeight() { return m_Size.y; }
+	float GetWidth() { return m_Size.x; }
+
+	void SetSize(glm::vec2 size)
+	{
+		m_Size = size;
+	}
 };

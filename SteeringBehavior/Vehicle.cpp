@@ -2,7 +2,7 @@
 #include "Vehicle.h"
 #include "SteeringBehavior.h"
 extern int m_iWidth, m_iHeight;
-Vehicle::Vehicle(const char * name):MovingObject(name), m_Steering(this),m_Size(30,50)
+Vehicle::Vehicle(const char * name):MovingObject(name), m_Steering(this)
 {
 }
 void Vehicle::Update(float dt)
@@ -65,14 +65,14 @@ void Vehicle::Render()
 	m_Steering.RenderDebugObj();
 	glPopMatrix();
 	
-	glBegin(GL_LINES);
+	/*glBegin(GL_LINES);
 	glColor3f(1, 0, 0);
 	glVertex2f(0, 0);
 	glVertex2f(m_Velocity.x, m_Velocity.y);
 	glColor3f(0, 1, 0);
 	glVertex2f(0, 0);
 	glVertex2f(m_CurrentForce.x, m_CurrentForce.y);
-	glEnd();
+	glEnd();*/
 
 	
 	glPopMatrix();
@@ -82,9 +82,12 @@ void Vehicle::Render()
 
 void Vehicle::UI(float dt)
 {
+	if (!m_bRenderUI) return;
 	ImGui::Begin(GetName().c_str());
 	ImGui::SliderFloat("Max Speed", &fMaxSpeed, 100, 400);
 	ImGui::SliderFloat("Max Force", &fMaxForce, 100, 400);
+	ImGui::Text("Current speed: %f", glm::length(m_Velocity));
+	ImGui::Text("Current force: %f", glm::length(m_CurrentForce));
 	if (ImGui::Button("Reset"))
 	{
 		Reset();

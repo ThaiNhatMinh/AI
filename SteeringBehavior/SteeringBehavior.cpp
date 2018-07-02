@@ -1,13 +1,17 @@
 #include "stdafx.h"
 #include "Vehicle.h"
 
-
+float SteeringBehavior::m_fAlignmentWeight = 1.0f;
+float SteeringBehavior::m_fCohensionWeight = 1.0f;
+float SteeringBehavior::m_fSeparationWeight = 1.0f;
+float SteeringBehavior::m_fViewDistance = 40.0f;
 const glm::vec2 & SteeringBehavior::Calculate()
 {
 	//GameWorld* pWorld = m_pOwner->GetWorld();
 	MovingObject* pTarget = m_pOwner->GetTarget();
 	glm::vec2 force;
-	if (Type == SteerType::Seek)
+	m_CurrentForce = glm::vec2(0);
+	/*if (Type == SteerType::Seek)
 	{
 		if(pTarget)	force = Seek(pTarget->GetPos());
 		else force = glm::vec2(0);
@@ -15,20 +19,97 @@ const glm::vec2 & SteeringBehavior::Calculate()
 	else if(Type==SteerType::Flee) force = Flee(pTarget->GetPos());
 	else if (Type == SteerType::Arrive) force = Arrive(pTarget->GetPos(), (Deceleration)(ArriveType+1));
 	else if (Type == SteerType::Pursuit) force = Pursuit(pTarget);
-	else if (Type == SteerType::Wander) force = Wander();
+	
 	else if (Type == SteerType::ObstacleAvoidance) force = ObstacleAvoidance();
 	else if (Type == SteerType::WallAvoidance) force = WallAvoidance();
 	else if (Type == SteerType::Interpose) force = Interpose();
 	else if (Type == SteerType::Hide) force = Hide();
 	else if (Type == SteerType::FollowPath) force = FollowPath();
-	else if (Type == SteerType::OffsetPursut) force = OffsetPursut();
-	//AccumulateForce(m_CurrentForce, force);
-	m_CurrentForce = force;
+	else if (Type == SteerType::OffsetPursut) force = OffsetPursut();*/
+
+	
+	if (IsActive(SteerType::Wander))
+	{
+		force = Wander();
+		if (!AccumulateForce(m_CurrentForce, force)) return m_CurrentForce;
+	}
+	
+	if (IsActive(SteerType::WallAvoidance))
+	{
+		force = ObstacleAvoidance();
+		if (!AccumulateForce(m_CurrentForce, force)) return m_CurrentForce;
+	}
+	if (IsActive(SteerType::ObstacleAvoidance))
+	{
+		force = ObstacleAvoidance();
+		if (!AccumulateForce(m_CurrentForce, force)) return m_CurrentForce;
+	}
+	if (IsActive(SteerType::Group))
+	{
+		force = Group();
+		if (!AccumulateForce(m_CurrentForce, force)) return m_CurrentForce;
+	}
 	return m_CurrentForce;
 }
 void SteeringBehavior::RenderDebugUI()
 {
-	
+	static bool wander = IsActive(SteerType::Wander);
+	static float wanderW = 1.0f;
+	if (ImGui::Checkbox(GetBehaviorName(SteerType::Wander), &wander))
+	{
+		if(wander) Type = Type | SteerType::Wander;
+		else Type = Type & (~SteerType::Wander);
+		
+	}
+	if (wander)
+	{
+		ImGui::SliderFloat("Radius ", &m_fWanderRadius, 10, 100);
+		ImGui::SliderFloat("Distance ", &m_fWanderDistance, 50, 150);
+		ImGui::SliderFloat("Jitter ", &m_fWanderJitter, 10, 100);
+	}
+
+	static bool group = IsActive(SteerType::Group);
+	if (ImGui::Checkbox(GetBehaviorName(SteerType::Group), &group))
+	{
+		if (group) Type = Type | SteerType::Group;
+		else Type = Type & (~SteerType::Group);
+
+	}
+	if (group)
+	{
+		ImGui::SliderFloat("Separation Weight ", &m_fSeparationWeight, 0, 10);
+		ImGui::SliderFloat("Alignment Weight ", &m_fAlignmentWeight, 0, 10);
+		ImGui::SliderFloat("Cohesion Weight ", &m_fCohensionWeight, 0, 10);
+		ImGui::SliderFloat("View Distance ", &m_fViewDistance, 10, 100);
+	}
+
+	static bool obsAvoid = IsActive(SteerType::ObstacleAvoidance);
+	if (ImGui::Checkbox(GetBehaviorName(SteerType::ObstacleAvoidance), &obsAvoid))
+	{
+		if (obsAvoid) Type = Type | SteerType::ObstacleAvoidance;
+		else Type = Type & (~SteerType::ObstacleAvoidance);
+
+	}
+	if (obsAvoid)
+	{
+		ImGui::SliderFloat("BrakingWeight", &BrakingWeight, 0.1, 2.0f);
+		ImGui::SliderFloat("TurnMultiplier", &TurnMultiplier, 1.0f, 2.0f);
+
+	}
+	static bool wallAvoid = IsActive(SteerType::WallAvoidance);
+	if (ImGui::Checkbox(GetBehaviorName(SteerType::WallAvoidance), &wallAvoid))
+	{
+		if (wallAvoid) Type = Type | SteerType::WallAvoidance;
+		else Type = Type & (~SteerType::WallAvoidance);
+
+	}
+	if (wallAvoid)
+	{
+		ImGui::SliderFloat("Fleeler Length", &m_FleelerLength, 15, 100);
+		ImGui::SliderFloat("Force Multi", &m_fForceMulti, 5, 100);
+		ImGui::SliderFloat("Base Force", &m_fBaseForce, 30, 100);
+
+	}
 	glPushMatrix();
 	glTranslatef(m_TargetPos.x, m_TargetPos.y, 0);
 	glBegin(GL_LINES);
@@ -39,14 +120,9 @@ void SteeringBehavior::RenderDebugUI()
 	glEnd();
 	glPopMatrix();
 
-	if (ImGui::Button("Behvior"))
-	{
-		Type = (SteerType)((Type*2) % SteerType::SteerNum);
-		if (Type == 0) Type = SteerType::Seek;
-	}
 	ImGui::SameLine();
-	ImGui::Text(GetBehaviorName(Type));
-	if (Type == SteerType::Arrive)
+	ImGui::Text(GetBehaviorName((SteerType)Type));
+	/*if (Type == SteerType::Arrive)
 	{
 		if (ImGui::Button("Speed"))
 		{
@@ -55,29 +131,12 @@ void SteeringBehavior::RenderDebugUI()
 		ImGui::SameLine();
 		ImGui::Text(ArriveTypeS[GetArriveType()].c_str());
 	}
-	else if (Type == SteerType::Wander)
-	{
-		ImGui::SliderFloat("Radius ", GetWanderRadius(), 10, 100);
-		ImGui::SliderFloat("Distance ", GetWanderDistance(), 50, 150);
-		ImGui::SliderFloat("Jitter ", GetWadnerJitter(), 10, 100);
-	}
-	else if (Type == SteerType::ObstacleAvoidance)
-	{
-		ImGui::SliderFloat("BrakingWeight", &BrakingWeight, 0.1, 2.0f);
-		ImGui::SliderFloat("TurnMultiplier", &TurnMultiplier, 1.0f, 2.0f);
-
-	}
-	else if (Type == SteerType::WallAvoidance)
-	{
-		ImGui::SliderFloat("Fleeler Length", &m_FleelerLength, 15,100);
-		ImGui::SliderFloat("Force Multi", &m_fForceMulti, 5, 100);
-		ImGui::SliderFloat("Base Force", &m_fBaseForce, 30, 100);
-	}
+	
 	else if (Type == SteerType::FollowPath)
 	{
 		ImGui::SliderFloat("m_fWayPointSeekDis", &m_fWayPointSeekDis, 5, 50);
 		
-	}
+	}*/
 
 }
 void SteeringBehavior::RenderDebugObj()
@@ -128,9 +187,13 @@ bool SteeringBehavior::AccumulateForce(glm::vec2 & force, const glm::vec2 & Forc
 
 	if (forceLengthAdd < ForceRemain)
 		force += ForcetoAdd;
-	else force += glm::normalize(ForcetoAdd) * ForceRemain;
+	else if(forceLengthAdd>0) force += glm::normalize(ForcetoAdd) * ForceRemain;
 	
 	return true;
+}
+int SteeringBehavior::IsActive(SteerType type)
+{
+	return type & Type;
 }
 glm::vec2 SteeringBehavior::Seek(const glm::vec2 & target)
 {
@@ -197,34 +260,17 @@ glm::vec2 SteeringBehavior::Evade(MovingObject * target)
 glm::vec2 SteeringBehavior::Wander()
 {
 	auto v  = glm::vec2(Rand()* m_fWanderJitter, Rand()*m_fWanderJitter);
+	m_TargetPos = glm::vec2(0);
 	m_TargetPos += v;
-	m_TargetPos = glm::normalize(m_TargetPos);
+	if(v!=glm::vec2(0) ) m_TargetPos = glm::normalize(m_TargetPos);
 	m_TargetPos *= m_fWanderRadius;
 	m_TargetPos += glm::vec2(0, m_fWanderDistance);
 
 	float angle = Vector2Angle(m_pOwner->GetVelocity()) - 90;
-	/*glm::vec2 t = m_TargetPos;
-	m_TargetPos.x = t.x * std::cosf(glm::radians(angle)) - t.y * std::sinf(glm::radians(angle));
-	m_TargetPos.y = t.x * std::sinf(glm::radians(angle)) + t.y * std::cosf(glm::radians(angle));
-	m_TargetPos += m_pOwner->GetPos();*/
 	
 	m_TargetPos = TransfromPoint(m_TargetPos, angle, m_pOwner->GetPos());
 
-	/*glm::mat3 ts;
-	ts[0] = glm::vec3(std::cosf(glm::radians(angle)), -std::sinf(glm::radians(angle)),0.0f);
-	ts[1] = glm::vec3(std::sinf(glm::radians(angle)), std::cosf(glm::radians(angle)), 0.0f);
-	ts[2] = glm::vec3(0, 0, 1);
-	glm::mat3 tt;
-	tt[2] = glm::vec3(m_pOwner->GetPos(), 1.0f);
-	m_TargetPos = ts * tt*glm::vec3(m_TargetPos, 0);*/
-
-	/*glm::mat3 ts;
-	ts[0] = glm::vec3(m_pOwner->GetFront(),0);
-	ts[1] = glm::vec3(m_pOwner->GetRight(),0);
-	m_TargetPos = ts * glm::vec3(m_TargetPos,0);
-	m_TargetPos += m_pOwner->GetPos();*/
-
-	//return m_TargetPos - m_pOwner->GetPos();
+	
 	return Seek(m_TargetPos);
 }
 
@@ -375,6 +421,93 @@ glm::vec2 SteeringBehavior::OffsetPursut()
 	float LookAheadTime = glm::length(ToOffset) / (m_pOwner->GetMaxSpeed() + glm::length(m_pTarget->GetVelocity()));
 
 	return Arrive(WorldOffsetPos + m_pTarget->GetVelocity()*LookAheadTime,fast);
+}
+
+glm::vec2 SteeringBehavior::Separation()
+{
+	glm::vec2 force(0);
+	auto& objects = m_pOwner->GetWorld()->GetObjects();
+
+	for (auto& el : objects)
+	{
+		if (el.get() != m_pOwner && el->IsTag())
+		{
+			glm::vec2 toAngent = m_pOwner->GetPos() - el->GetPos();
+
+			force += glm::normalize(toAngent) / glm::length(toAngent);
+		}
+	}
+
+	return force;
+}
+
+glm::vec2 SteeringBehavior::Alignment()
+{
+	glm::vec2 AvgHeading(0);
+	int num = 0;
+	auto& objects = m_pOwner->GetWorld()->GetObjects();
+
+	for (auto& el : objects)
+	{
+		if (el.get() != m_pOwner && el->IsTag())
+		{
+			AvgHeading += el->GetFront();
+			num++;
+		}
+	}
+
+	if (num > 0)
+	{
+		AvgHeading /= num;
+		AvgHeading -= m_pOwner->GetFront();
+	}
+
+	return AvgHeading;
+}
+
+glm::vec2 SteeringBehavior::Cohesion()
+{
+	glm::vec2 CenterOfMass, force(0);
+	int num = 0;
+	auto& objects = m_pOwner->GetWorld()->GetObjects();
+	for (auto& el : objects)
+	{
+		if (el.get() != m_pOwner && el->IsTag())
+		{
+			CenterOfMass += el->GetPos();
+			num++;
+		}
+	}
+
+	if (num > 0)
+	{
+		CenterOfMass /= num;
+		force = Seek(CenterOfMass);
+
+	}
+
+	return force;
+}
+
+glm::vec2 SteeringBehavior::Group()
+{
+	GameWorld* pWorld = m_pOwner->GetWorld();
+	//TagNeighbors(m_pOwner, pWorld->GetObjects(), m_fViewDistance);
+	auto& Objs = pWorld->GetObjects();
+	for (auto obj = Objs.begin(); obj != Objs.end(); obj++)
+	{
+		(*obj)->UnTag();
+		glm::vec2 to = (*obj)->GetPos() - m_pOwner->GetPos();
+		float range = m_fViewDistance + (*obj)->GetHeight();
+
+		if ((*obj).get() != m_pOwner && glm::length(to) < range)
+			(*obj)->Tag();
+
+	}
+	glm::vec2 force = Separation() * m_fSeparationWeight;
+	force += Alignment() * m_fAlignmentWeight;
+	force += Cohesion() * m_fCohensionWeight;
+	return force;
 }
 
 glm::vec2 SteeringBehavior::ObstacleAvoidance()
